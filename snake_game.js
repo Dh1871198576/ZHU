@@ -33,14 +33,21 @@ let gameState = {
     score: 0,
     snake: [],
     direction: { x: BLOCK_SIZE, y: 0 },
+    nextDirection: { x: BLOCK_SIZE, y: 0 }, // 添加下一个方向缓存
     food: { x: 0, y: 0 },
     bomb: { x: -100, y: -100, exists: false, timer: 0 },
     effects: {
         food: { frames: 0, position: null },
         bomb: { frames: 0, position: null }
-    }, // 修复：添加缺少的逗号
-    particles: [] // 粒子数组
+    },
+    particles: [],
+    lastMoveTime: 0, // 添加上次移动时间
+    inputBuffer: [] // 添加输入缓冲区
 };
+
+// 添加游戏循环ID用于控制
+let gameLoopId = null;
+let lastFrameTime = 0;
 
 /**
  * 粒子类 - 用于创建背景装饰效果
@@ -48,44 +55,32 @@ let gameState = {
  */
 class Particle {
     constructor(x, y) {
-        this.x = x; // 粒子的X坐标
-        this.y = y; // 粒子的Y坐标
-        this.vx = (Math.random() - 0.5) * 2; // X方向的速度
-        this.vy = (Math.random() - 0.5) * 2; // Y方向的速度
-        this.life = 1.0; // 生命值，从1开始逐渐减少到0
-        this.decay = Math.random() * 0.02 + 0.01; // 生命值减少的速度
-        this.size = Math.random() * 3 + 1; // 粒子的大小
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.life = 1.0;
+        this.decay = Math.random() * 0.02 + 0.01;
+        this.size = Math.random() * 3 + 1;
     }
     
-    /**
-     * 更新粒子状态
-     * 每帧调用，更新位置和生命值
-     */
     update() {
-        this.x += this.vx; // 根据速度更新X坐标
-        this.y += this.vy; // 根据速度更新Y坐标
-        this.life -= this.decay; // 减少生命值
-        this.size *= 0.99; // 粒子逐渐变小
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+        this.size *= 0.99;
     }
     
-    /**
-     * 绘制粒子
-     * @param {CanvasRenderingContext2D} ctx - 画布上下文
-     */
     draw(ctx) {
-        ctx.save(); // 保存当前画布状态
-        ctx.globalAlpha = this.life; // 设置透明度为生命值
-        ctx.fillStyle = `hsl(${Math.random() * 60 + 60}, 70%, 80%)`; // 黄绿色调
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = `hsl(${Math.random() * 60 + 60}, 70%, 80%)`;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI); // 绘制圆形粒子
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
         ctx.fill();
-        ctx.restore(); // 恢复画布状态
+        ctx.restore();
     }
     
-    /**
-     * 检查粒子是否应该被移除
-     * @returns {boolean} 如果粒子生命值耗尽或太小则返回true
-     */
     isDead() {
         return this.life <= 0 || this.size <= 0.1;
     }
@@ -111,6 +106,142 @@ document.getElementById('resumeBtn').addEventListener('click', resumeGame);
 // 键盘事件监听
 document.addEventListener('keydown', handleKeyPress);
 
+// 优化后的虚拟方向键事件监听 - 只使用touchstart，移除重复的click事件
+function initMobileControls() {
+    const directions = ['up', 'down', 'left', 'right'];
+    
+    directions.forEach(direction => {
+        const btn = document.getElementById(direction + 'Btn');
+        if (btn) {
+            // 移除所有现有事件监听器
+            btn.replaceWith(btn.cloneNode(true));
+            const newBtn = document.getElementById(direction + 'Btn');
+            
+            // 只添加一个优化的事件监听器
+            newBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleDirectionInput(direction);
+            }, { passive: false });
+            
+            // 为桌面端添加mousedown事件（更快响应）
+            newBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleDirectionInput(direction);
+            });
+        }
+    });
+}
+
+/**
+ * 统一的方向输入处理函数
+ * @param {string} direction - 方向：'up', 'down', 'left', 'right'
+ */
+function handleDirectionInput(direction) {
+    if (!gameState.isRunning || gameState.isGameOver || gameState.isPaused) return;
+    
+    // 立即更新方向，不等待游戏循环
+    const success = changeDirection(direction);
+    
+    if (success) {
+        // 添加触觉反馈（如果设备支持）
+        if (navigator.vibrate) {
+            navigator.vibrate(30); // 减少震动时间
+        }
+        
+        // 添加视觉反馈
+        const btn = document.getElementById(direction + 'Btn');
+        if (btn) {
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                btn.style.transform = '';
+            }, 100);
+        }
+    }
+}
+
+/**
+ * 优化的方向改变函数
+ * @param {string} direction - 方向：'up', 'down', 'left', 'right'
+ * @returns {boolean} 是否成功改变方向
+ */
+function changeDirection(direction) {
+    let newDirection;
+    
+    switch (direction) {
+        case 'up':
+            newDirection = { x: 0, y: -BLOCK_SIZE };
+            // 防止反向移动
+            if (gameState.direction.y === BLOCK_SIZE) return false;
+            break;
+        case 'down':
+            newDirection = { x: 0, y: BLOCK_SIZE };
+            if (gameState.direction.y === -BLOCK_SIZE) return false;
+            break;
+        case 'left':
+            newDirection = { x: -BLOCK_SIZE, y: 0 };
+            if (gameState.direction.x === BLOCK_SIZE) return false;
+            break;
+        case 'right':
+            newDirection = { x: BLOCK_SIZE, y: 0 };
+            if (gameState.direction.x === -BLOCK_SIZE) return false;
+            break;
+        default:
+            return false;
+    }
+    
+    // 立即更新方向
+    gameState.direction = newDirection;
+    gameState.nextDirection = newDirection;
+    
+    return true;
+}
+
+/**
+ * 优化的键盘输入处理
+ * @param {KeyboardEvent} event - 键盘事件
+ */
+function handleKeyPress(event) {
+    if (!gameState.isRunning || gameState.isGameOver) return;
+    
+    let direction = null;
+    
+    switch (event.key) {
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+            direction = 'left';
+            break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+            direction = 'right';
+            break;
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+            direction = 'up';
+            break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+            direction = 'down';
+            break;
+        case 'p':
+        case 'P':
+        case ' ':
+            event.preventDefault();
+            togglePause();
+            return;
+    }
+    
+    if (direction) {
+        event.preventDefault();
+        handleDirectionInput(direction);
+    }
+}
+
 /**
  * 初始化游戏
  * 设置蛇的初始位置、生成第一个食物等
@@ -121,6 +252,8 @@ function initGame() {
     gameState.isRunning = true;
     gameState.isPaused = false;
     gameState.isGameOver = false;
+    gameState.lastMoveTime = 0;
+    gameState.inputBuffer = [];
     
     // 初始化蛇的位置（屏幕中央）
     const centerX = Math.floor(CANVAS_WIDTH / 2 / BLOCK_SIZE) * BLOCK_SIZE;
@@ -129,6 +262,7 @@ function initGame() {
     
     // 设置初始方向（向右）
     gameState.direction = { x: BLOCK_SIZE, y: 0 };
+    gameState.nextDirection = { x: BLOCK_SIZE, y: 0 };
     
     // 生成第一个食物
     generateFood();
@@ -156,7 +290,32 @@ function initGame() {
 function startGame() {
     hideAllScreens();
     initGame();
+    initMobileControls(); // 初始化移动端控制
     gameLoop();
+}
+
+/**
+ * 优化的游戏循环 - 使用requestAnimationFrame替代setTimeout
+ */
+function gameLoop(currentTime = 0) {
+    if (!gameState.isRunning || gameState.isGameOver) return;
+    
+    if (gameState.isPaused) {
+        gameLoopId = requestAnimationFrame(gameLoop);
+        return;
+    }
+    
+    // 控制游戏速度
+    const deltaTime = currentTime - lastFrameTime;
+    const targetFrameTime = 1000 / GAME_SPEED; // 目标帧时间
+    
+    if (deltaTime >= targetFrameTime) {
+        update();
+        render();
+        lastFrameTime = currentTime;
+    }
+    
+    gameLoopId = requestAnimationFrame(gameLoop);
 }
 
 /**
@@ -170,7 +329,6 @@ function togglePause() {
         showPauseScreen();
     } else {
         hidePauseScreen();
-        gameLoop();
     }
 }
 
@@ -180,7 +338,6 @@ function togglePause() {
 function resumeGame() {
     gameState.isPaused = false;
     hidePauseScreen();
-    gameLoop();
 }
 
 /**
