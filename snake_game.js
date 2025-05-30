@@ -927,3 +927,19 @@ function gameLoop() {
 
 // 初始化游戏
 showStartScreen();
+
+// 在文件末尾添加窗口大小改变监听器
+window.addEventListener('resize', () => {
+    // 重新检测设备类型并更新按键显示
+    const isMobile = detectMobileDevice();
+    const mobileControls = document.getElementById('mobileControls');
+    
+    if (mobileControls) {
+        mobileControls.style.display = isMobile ? 'flex' : 'none';
+    }
+});
+
+// 页面加载完成后立即检测设备类型
+window.addEventListener('DOMContentLoaded', () => {
+    initMobileControls();
+});
