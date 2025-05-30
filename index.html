@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>贪吃猪</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>🐷 贪吃猪 🌭</h1>
+            <div class="score-display">
+                <span id="score">分数: 0</span>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+        
+        <!-- 手机端虚拟方向键 -->
+        <div id="mobileControls" class="mobile-controls">
+            <div class="direction-pad">
+                <button id="upBtn" class="direction-btn up-btn">↑</button>
+                <div class="horizontal-controls">
+                    <button id="leftBtn" class="direction-btn left-btn">←</button>
+                    <button id="rightBtn" class="direction-btn right-btn">→</button>
+                </div>
+                <button id="downBtn" class="direction-btn down-btn">↓</button>
+            </div>
+        </div>
+        
+        <div class="game-controls">
+            <button id="startBtn" class="btn btn-start">开始游戏</button>
+            <button id="pauseBtn" class="btn btn-pause" style="display:none;">暂停游戏</button>
+            <button id="restartBtn" class="btn btn-restart" style="display:none;">重新开始</button>
+        </div>
+        
+        <div class="game-instructions">
+            <h3>游戏说明：</h3>
+            <p>🎮 使用方向键或虚拟按键控制小猪移动</p>
+            <p>🌭 吃香肠增加长度和分数</p>
+            <p>💣 吃炸弹会减少一半长度</p>
+            <p>⏸️ 按P键或空格键暂停游戏</p>
+        </div>
+        
+        <!-- 游戏开始界面 -->
+        <div id="startScreen" class="screen">
+            <h2>🐷 贪吃猪 🌭</h2>
+            <button id="startGameBtn" class="btn btn-large btn-start">开始游戏</button>
+            <div class="instructions">
+                <p>使用方向键或虚拟按键控制小猪的移动</p>
+                <p>吃香肠增加长度和分数</p>
+                <p>吃炸弹会减少一半长度</p>
+                <p>按P键暂停游戏</p>
+            </div>
+        </div>
+        
+        <!-- 游戏结束界面 -->
+        <div id="gameOverScreen" class="screen" style="display:none;">
+            <h2>游戏结束！</h2>
+            <p id="finalScore">最终分数: 0</p>
+            <button id="restartGameBtn" class="btn btn-large btn-restart">重新开始</button>
+            <button id="exitGameBtn" class="btn btn-large btn-exit">退出游戏</button>
+        </div>
+        
+        <!-- 暂停界面 -->
+        <div id="pauseScreen" class="screen" style="display:none;">
+            <h2>游戏暂停</h2>
+            <p>按P或空格键继续游戏</p>
+            <button id="resumeBtn" class="btn btn-large btn-start">继续游戏</button>
+        </div>
+    </div>
+    
+    <script src="snake_game.js"></script>
+</body>
+</html>
