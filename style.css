@@ -410,12 +410,92 @@ body::after {
     }
 }
 
+/* 设备选择界面样式 */
+.device-selection {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+}
+
+.device-buttons {
+    display: flex;
+    gap: 30px;
+    margin: 30px 0;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-mobile {
+    background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+    border: 2px solid #FF6B6B;
+}
+
+.btn-mobile:hover {
+    background: linear-gradient(45deg, #FF8E8E, #FF6B6B);
+    transform: translateY(-3px) scale(1.05);
+}
+
+.btn-pc {
+    background: linear-gradient(45deg, #4ECDC4, #6EDDD6);
+    border: 2px solid #4ECDC4;
+}
+
+.btn-pc:hover {
+    background: linear-gradient(45deg, #6EDDD6, #4ECDC4);
+    transform: translateY(-3px) scale(1.05);
+}
+
+.device-info {
+    margin-top: 20px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #2E8B57;
+}
+
+.device-info p {
+    margin: 8px 0;
+    color: #555;
+    font-size: 0.9em;
+}
+
+/* 设备指示器样式 */
+.device-indicator {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.device-indicator span {
+    font-weight: bold;
+    color: #2E8B57;
+}
+
+.btn-small {
+    font-size: 0.8em;
+    padding: 6px 12px;
+    background: linear-gradient(45deg, #95A5A6, #BDC3C7);
+}
+
+.btn-small:hover {
+    background: linear-gradient(45deg, #BDC3C7, #95A5A6);
+}
+
 /* 手机端虚拟方向键样式 */
 .mobile-controls {
     display: none; /* 默认隐藏，通过JavaScript控制显示 */
     margin: 20px 0;
     justify-content: center;
     align-items: center;
+}
+
+.mobile-controls.show {
+    display: flex;
 }
 
 .direction-pad {

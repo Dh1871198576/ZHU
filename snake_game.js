@@ -106,8 +106,83 @@ document.getElementById('resumeBtn').addEventListener('click', resumeGame);
 // 键盘事件监听
 document.addEventListener('keydown', handleKeyPress);
 
-// 优化后的虚拟方向键事件监听 - 只使用touchstart，移除重复的click事件
+// 添加设备类型状态
+let deviceType = null; // 'mobile' 或 'pc'
+
+// 获取新的DOM元素
+const deviceSelectionScreen = document.getElementById('deviceSelectionScreen');
+const deviceTypeElement = document.getElementById('deviceType');
+const controlInstructions = document.getElementById('controlInstructions');
+const startInstructions = document.getElementById('startInstructions');
+const mobileControls = document.getElementById('mobileControls');
+
+// 设备选择事件监听
+document.getElementById('selectMobileBtn').addEventListener('click', () => selectDevice('mobile'));
+document.getElementById('selectPCBtn').addEventListener('click', () => selectDevice('pc'));
+document.getElementById('changeDeviceBtn').addEventListener('click', showDeviceSelection);
+
+/**
+ * 显示设备选择界面
+ * 让用户重新选择设备类型
+ */
+function showDeviceSelection() {
+    deviceSelectionScreen.style.display = 'flex';
+    hideAllScreens();
+}
+
+/**
+ * 选择设备类型
+ * @param {string} type - 设备类型：'mobile' 或 'pc'
+ */
+function selectDevice(type) {
+    deviceType = type;
+    deviceSelectionScreen.style.display = 'none';
+    
+    // 更新设备类型显示
+    const deviceName = type === 'mobile' ? '📱 手机端' : '💻 电脑端';
+    deviceTypeElement.textContent = `设备类型：${deviceName}`;
+    
+    // 根据设备类型显示/隐藏虚拟按键
+    if (type === 'mobile') {
+        mobileControls.classList.add('show');
+        controlInstructions.textContent = '🎮 使用虚拟方向键控制小猪移动';
+        startInstructions.textContent = '使用虚拟方向键控制小猪的移动';
+    } else {
+        mobileControls.classList.remove('show');
+        controlInstructions.textContent = '🎮 使用方向键或WASD键控制小猪移动';
+        startInstructions.textContent = '使用方向键或WASD键控制小猪的移动';
+    }
+    
+    // 初始化移动端控制（如果是手机端）
+    if (type === 'mobile') {
+        initMobileControls();
+    }
+    
+    // 显示开始界面
+    showStartScreen();
+    
+    // 保存用户选择到本地存储
+    localStorage.setItem('snakeGameDeviceType', type);
+}
+
+/**
+ * 检查是否有保存的设备类型选择
+ * 如果有，直接使用；如果没有，显示选择界面
+ */
+function checkSavedDeviceType() {
+    const savedType = localStorage.getItem('snakeGameDeviceType');
+    if (savedType && (savedType === 'mobile' || savedType === 'pc')) {
+        selectDevice(savedType);
+    } else {
+        showDeviceSelection();
+    }
+}
+
+// 优化后的虚拟方向键事件监听
 function initMobileControls() {
+    // 只在手机端模式下初始化
+    if (deviceType !== 'mobile') return;
+    
     const directions = ['up', 'down', 'left', 'right'];
     
     directions.forEach(direction => {
@@ -117,14 +192,14 @@ function initMobileControls() {
             btn.replaceWith(btn.cloneNode(true));
             const newBtn = document.getElementById(direction + 'Btn');
             
-            // 只添加一个优化的事件监听器
+            // 添加触摸事件监听器
             newBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 handleDirectionInput(direction);
             }, { passive: false });
             
-            // 为桌面端添加mousedown事件（更快响应）
+            // 添加鼠标事件监听器（用于测试）
             newBtn.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -145,18 +220,20 @@ function handleDirectionInput(direction) {
     const success = changeDirection(direction);
     
     if (success) {
-        // 添加触觉反馈（如果设备支持）
-        if (navigator.vibrate) {
-            navigator.vibrate(30); // 减少震动时间
+        // 添加触觉反馈（如果设备支持且是手机端）
+        if (deviceType === 'mobile' && navigator.vibrate) {
+            navigator.vibrate(30);
         }
         
-        // 添加视觉反馈
-        const btn = document.getElementById(direction + 'Btn');
-        if (btn) {
-            btn.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                btn.style.transform = '';
-            }, 100);
+        // 添加视觉反馈（仅手机端）
+        if (deviceType === 'mobile') {
+            const btn = document.getElementById(direction + 'Btn');
+            if (btn) {
+                btn.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    btn.style.transform = '';
+                }, 100);
+            }
         }
     }
 }
@@ -288,9 +365,20 @@ function initGame() {
  * 隐藏开始界面，初始化游戏状态，开始游戏循环
  */
 function startGame() {
+    // 检查是否已选择设备类型
+    if (!deviceType) {
+        showDeviceSelection();
+        return;
+    }
+    
     hideAllScreens();
     initGame();
-    initMobileControls(); // 初始化移动端控制
+    
+    // 只在手机端初始化移动端控制
+    if (deviceType === 'mobile') {
+        initMobileControls();
+    }
+    
     gameLoop();
 }
 

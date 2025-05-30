@@ -7,7 +7,27 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 设备选择界面 -->
+    <div id="deviceSelectionScreen" class="screen device-selection">
+        <h2>🐷 贪吃猪 🌭</h2>
+        <p>请选择您的设备类型：</p>
+        <div class="device-buttons">
+            <button id="selectMobileBtn" class="btn btn-large btn-mobile">📱 手机端</button>
+            <button id="selectPCBtn" class="btn btn-large btn-pc">💻 电脑端</button>
+        </div>
+        <div class="device-info">
+            <p>💡 手机端：显示虚拟方向键，适合触屏操作</p>
+            <p>💡 电脑端：使用键盘方向键，适合键盘操作</p>
+        </div>
+    </div>
+
     <div class="game-container">
+        <!-- 设备类型显示 -->
+        <div class="device-indicator">
+            <span id="deviceType">设备类型：未选择</span>
+            <button id="changeDeviceBtn" class="btn btn-small">切换设备</button>
+        </div>
+        
         <div class="game-header">
             <h1>🐷 贪吃猪 🌭</h1>
             <div class="score-display">
@@ -37,7 +57,7 @@
         
         <div class="game-instructions">
             <h3>游戏说明：</h3>
-            <p>🎮 使用方向键或虚拟按键控制小猪移动</p>
+            <p id="controlInstructions">🎮 请先选择设备类型</p>
             <p>🌭 吃香肠增加长度和分数</p>
             <p>💣 吃炸弹会减少一半长度</p>
             <p>⏸️ 按P键或空格键暂停游戏</p>
@@ -48,7 +68,7 @@
             <h2>🐷 贪吃猪 🌭</h2>
             <button id="startGameBtn" class="btn btn-large btn-start">开始游戏</button>
             <div class="instructions">
-                <p>使用方向键或虚拟按键控制小猪的移动</p>
+                <p id="startInstructions">请先选择设备类型</p>
                 <p>吃香肠增加长度和分数</p>
                 <p>吃炸弹会减少一半长度</p>
                 <p>按P键暂停游戏</p>
